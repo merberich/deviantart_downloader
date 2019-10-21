@@ -1,2 +1,2 @@
-# deviantart_explorer
+# deviantart_downloader
 Commandline tool for browsing DeviantArt.
