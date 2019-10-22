@@ -70,7 +70,7 @@ class Folder():
     """Class representing one grouping of Deviations."""
     def __init__(self):
         self.folderid = ""
-        self.folder_name = ""
+        self.name = ""
 
 class Deviation():
     """Class representing one art piece on DeviantArt."""
@@ -138,6 +138,32 @@ class DAExplorer():
             raise DAExplorerException("HTTP error with request: " + str(e))
         return response
 
+    def _get_gallery_folders(self, page_idx):
+        """
+        Helper method to call DeviantArt API function "/gallery/folders".
+        :param page_idx: int Index of the page to fetch, pagelen MAX_ITEMS_PER_REQUEST.
+        :return dict Response from the API.
+        """
+        return self._api("/gallery/folders", get_data={
+            "username": self.user,
+            "offset": page_idx * DAExplorer.MAX_ITEMS_PER_REQUEST,
+            "limit": DAExplorer.MAX_ITEMS_PER_REQUEST,
+            "mature_content": True
+        })
+
+    def _get_collection_folders(self, page_idx):
+        """
+        Helper method to call DeviantArt API function "/collections/folders".
+        :param page_idx: int Index of the page to fetch, pagelen MAX_ITEMS_PER_REQUEST.
+        :return dict Response from the API.
+        """
+        return self._api("/collections/folders", get_data={
+            "username": self.user,
+            "offset": page_idx * DAExplorer.MAX_ITEMS_PER_REQUEST,
+            "limit": DAExplorer.MAX_ITEMS_PER_REQUEST,
+            "mature_content": True
+        })
+
     def _get_gallery_all(self, page_idx):
         """
         Helper method to call DeviantArt API function "/gallery/all".
@@ -195,8 +221,29 @@ class DAExplorer():
         :param page_idx: int Index of Folder set to fetch.
         :return List of Folders at current index (or None if index is out of bounds).
         """
-        # @todo define me
-        pass
+        if not type(source) is Source:
+            raise DAExplorerException("Argument 'source' must be type Source.");
+        if not type(page_idx) is int:
+            raise DAExplorerException("Argument 'page_idx' must be type int.")
+
+        output = []
+        response = None
+        if source is Source.GALLERY:
+            response = self._get_gallery_folders(page_idx)
+        elif source is Source.COLLECTION:
+            response = self._get_collection_folders(page_idx)
+
+        # End condition: no more Folders to find
+        if response == None or (not response["has_more"] and len(response["results"]) == 0):
+            return None
+
+        for folder_info in response["results"]:
+            output.append(Folder())
+            folder = output[-1]
+            folder.folderid = folder_info["folderid"]
+            folder.name = folder_info["name"]
+
+        return output
 
     def list_deviations(self, source, folder, page_idx):
         """
@@ -215,6 +262,8 @@ class DAExplorer():
             print(type(folder))
             print(type(folder) is None)
             raise DAExplorerException("Argument 'folder' must be type Folder or None.");
+        if not type(page_idx) is int:
+            raise DAExplorerException("Argument 'page_idx' must be type int.")
 
         output = []
         response = None
@@ -230,7 +279,7 @@ class DAExplorer():
                 response = self._get_collection_folder(folder.folderid, page_idx)
 
         # End condition: no more Deviations to find
-        if not response["has_more"] and len(response["results"]) == 0:
+        if response == None or (not response["has_more"] and len(response["results"]) == 0):
             return None
 
         for dev_info in response["results"]:
@@ -261,8 +310,7 @@ class DAExplorer():
                 # Deviation can't be downloaded at highest resolution, so fetch the preview
                 url_targ = deviation.preview_src
             else:
-                # Deviation has no content to be downloaded
-                # @todo consider supporting /deviation/content API function for non-image media
+                # Deviation has no image content to be downloaded
                 return
             async with aiohttp.ClientSession() as session:
                 async with session.get(url_targ) as resp:
