@@ -7,9 +7,14 @@ Module for abstracting functionality from DeviantArt. Wraps the DeviantArt API a
 performance when fetching resources.
 """
 
+import deviantart
 import os
 from enum import Enum, auto
 import json
+from pathlib import PurePath
+import mimetypes
+import aiohttp
+import aiofiles
 
 class DAExplorerException(Exception):
     pass
@@ -64,32 +69,32 @@ class Folder():
         pass
 
 class Deviation():
+    """Class representing one art piece on DeviantArt."""
     def __init__(self):
-        # @todo
-        pass
+        self.deviationid = ""
+        self.is_downloadable = False
+        self.preview_src = ""
 
 class DAExplorer():
     """API object for searching and downloading Deviations via DeviantArt."""
 
     MAX_ITEMS_PER_REQUEST = 20
 
-    def __init__(self):
-        # @todo define class fields
-        pass
-
-    def open(self, credentials, target_user):
+    def __init__(self, credentials, target_user):
         """
         Open an API handle for the explorer.
         :param credentials: Credentials to use in this session.
         :param target_user: str for user to explore in this session.
         """
-        # @todo define me
-        pass
+        self.api = None
+        self.user = target_user
+        # @todo other fields as necessary
 
-    def close(self):
-        """Close the active API session, if any."""
-        # @todo define me
-        pass
+        self.api = deviantart.Api(
+            client_id = credentials.client_id,
+            client_secret = credentials.client_secret,
+            redirect_uri = ""
+        )
 
     def list_folders(self, source, page_idx):
         """
@@ -115,8 +120,33 @@ class DAExplorer():
     async def download_deviation(self, deviation, full_path):
         """
         Download the requested Deviation.
-        :param deviation Deviation object to download. Must be generated from this API.
-        :param full_path path-like object (exclusing file name) in which to store result.
+        :param deviation: Deviation object to download. Must be generated from this API.
+        :param full_path: path-like object (excluding file name) in which to store result.
         """
-        # @todo this
-        pass
+        if not type(deviation) is Deviation:
+            raise DAExplorerException("Argument 'deviation' must be type Deviation.")
+        os.makedirs(PurePath(full_path), exist_ok = True)  # Ensure the output path exists
+        try:
+            url_targ = ""
+            if deviation.is_downloadable:
+                deviation_raw = self.api.download_deviation(deviation.deviationid)
+                url_targ = deviation_raw["src"]
+            else:
+                # Deviation can't be downloaded at highest resolution, so fetch the preview
+                url_targ = deviation.preview_src
+            async with aiohttp.ClientSession() as session:
+                async with session.get(url_targ) as resp:
+                    if resp.status == 200:  # HTTP success
+                        extension = mimetypes.guess_extension(resp.content_type, strict = False)
+                        if not extension:
+                            # Do it the hackish way if mimetypes can't figure it out
+                            extension = "." + url_targ.split("/")[-1].split(".")[1].split("?")[0]
+                        f = await aiofiles.open(
+                            PurePath(full_path).joinpath(str(deviation.deviationid) + extension),
+                            mode='wb'
+                        )
+                        await f.write(await resp.read())
+                        await f.close()
+        except Exception as e:
+            raise DAExplorerException("Error downloading deviation " + str(deviation.deviationid)
+                + ": " + str(e))
