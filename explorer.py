@@ -115,6 +115,8 @@ class DAExplorer():
             else:
                 raise DAExplorerException("Error authorizing: " + str(e))
 
+        self._check_user()
+
     def _api(self, endpoint, get_data=dict(), post_data=dict()):
         """
         Helper method to make a DeviantArt API call.
@@ -132,11 +134,20 @@ class DAExplorer():
         try:
             encdata = urlencode(post_data, True).encode('utf-8')
             response = self.oauth.request(request_parameter, data=encdata)
+        except HTTPError as e:
+            response = json.loads(e.read().decode("utf-8"))
             if "error" in response:
                 raise DAExplorerException("DA API error: " + response["error_description"])
-        except HTTPError as e:
-            raise DAExplorerException("HTTP error with request: " + str(e))
+            else:
+                raise DAExplorerException("HTTP error with request: " + str(e))
         return response
+
+    def _check_user(self):
+        """
+        Helper method to call DeviantArt API function "/user/profile/{username}" for current user.
+        Raises exception if user does not exist.
+        """
+        return self._api(f"/user/profile/{self.user}")
 
     def _get_gallery_folders(self, page_idx):
         """
