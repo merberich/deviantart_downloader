@@ -10,7 +10,7 @@ performance when fetching resources.
 import os
 from enum import Enum, auto
 import json
-from pathlib import PurePath
+from pathlib import Path
 import mimetypes
 import aiohttp
 import aiofiles
@@ -115,6 +115,7 @@ class DAExplorer():
             else:
                 raise DAExplorerException("Error authorizing: " + str(e))
 
+        self._check_creds()
         self._check_user()
 
     def _api(self, endpoint, get_data=dict(), post_data=dict()):
@@ -141,6 +142,13 @@ class DAExplorer():
             else:
                 raise DAExplorerException("HTTP error with request: " + str(e))
         return response
+
+    def _check_creds(self):
+        """
+        Helper method to call DeviantArt API's "/placebo" to validate credentials.
+        Raises exception if credentials invalid.
+        """
+        return self._api("/placebo")
 
     def _check_user(self):
         """
@@ -311,7 +319,7 @@ class DAExplorer():
         """
         if not type(deviation) is Deviation:
             raise DAExplorerException("Argument 'deviation' must be type Deviation.")
-        os.makedirs(PurePath(full_path), exist_ok = True)  # Ensure the output path exists
+        os.makedirs(Path(full_path), exist_ok = True)  # Ensure the output path exists
         try:
             url_targ = ""
             if deviation.is_downloadable:
@@ -331,7 +339,7 @@ class DAExplorer():
                             # Do it the hackish way if mimetypes can't figure it out
                             extension = "." + url_targ.split("/")[-1].split(".")[1].split("?")[0]
                         f = await aiofiles.open(
-                            PurePath(full_path).joinpath(str(deviation.deviationid) + extension),
+                            Path(full_path).joinpath(str(deviation.deviationid) + extension),
                             mode='wb'
                         )
                         await f.write(await resp.read())
