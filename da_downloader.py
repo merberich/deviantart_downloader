@@ -168,14 +168,6 @@ def _download_folder(api, source, folder, error_stream, rebuild_cache):
                 if dev.deviationid == last_cached:
                     devs = devs[0:i]  # Slice down to non-cached stuff
                     hit_cache_end = True
-        '''
-        # End downloading if files are already cached
-        # @todo revise this; still have to download the whole group if only one dev added
-        if not rebuild_cache:
-            if len(list(filter(lambda f: f.startswith(devs[0].deviationid), \
-                os.listdir(local_out_dir)))):
-                break
-        '''
 
         # Download this group of deviations
         aio.get_event_loop().run_until_complete(_download_group(api, devs, local_out_dir))
@@ -270,6 +262,11 @@ if __name__ == "__main__":
     if error_stream != sys.stdout:
         error_stream.close()
 
+    # @todo consider using a different naming scheme for Deviations saved (easier identification):
+    #       <GUID>__<upload_date>__<sanitized_title> ?
+    #       <GUID>__<upload_date> ?
+    #       <upload_date>__<GUID> ?
+    #       <upload_date>__<GUID>__<sanitized_title> ?
     # @todo consider restructuring this into a class so that members can be shared
     # @todo refactor so that sys.exit() still exits safely (error stream redirection, etc)
     #       generally, more robust error handling here
