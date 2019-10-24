@@ -319,7 +319,6 @@ class DAExplorer():
         """
         if not type(deviation) is Deviation:
             raise DAExplorerException("Argument 'deviation' must be type Deviation.")
-        os.makedirs(Path(full_path), exist_ok = True)  # Ensure the output path exists
         try:
             url_targ = ""
             if deviation.is_downloadable:
@@ -331,6 +330,7 @@ class DAExplorer():
             else:
                 # Deviation has no image content to be downloaded
                 return
+            os.makedirs(Path(full_path), exist_ok = True)  # Ensure the output path exists
             async with aiohttp.ClientSession() as session:
                 async with session.get(url_targ) as resp:
                     if resp.status == 200:  # HTTP success
