@@ -114,7 +114,6 @@ class DAFrontend():
 
         # Error redirection first, since it affects all options following
         if args.error_file:
-            os.makedirs(args.error_file, exist_ok = True)
             self.error_stream = open(args.error_file, "w+")
 
         # API arguments
