@@ -39,7 +39,7 @@ class DAFrontend():
         self.parser.add_argument("-a", "--auth_creds",
             dest = "creds",
             type = str,
-            default = ".\creds\creds.json",
+            default = Path("creds").joinpath("creds.json"),
             help = """
                 DeviantArt client credentials file path. The credentials file must be valid
                 JSON containing string attributes 'client_id' and 'client_secret'. To
