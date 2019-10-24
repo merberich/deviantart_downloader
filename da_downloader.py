@@ -270,5 +270,4 @@ if __name__ == "__main__":
     # @todo consider restructuring this into a class so that members can be shared
     # @todo refactor so that sys.exit() still exits safely (error stream redirection, etc)
     #       generally, more robust error handling here
-    # @todo setuptools / requirements
     # @todo update README with full instructions for how to use
