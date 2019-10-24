@@ -4,7 +4,7 @@ Command-line tool for browsing DeviantArt.
 
 ## Installation
 
-- Install latest version of Python 3.X
+- Install Python 3.7.5+
 - Download this directory
 - From a terminal instance within this directory, run `python -m pip install -r requirements.txt`
 
