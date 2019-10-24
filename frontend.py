@@ -121,7 +121,7 @@ class DAFrontend():
             self.creds = Credentials().from_file(args.creds)
         except Exception as e:
             print("Error obtaining credentials: " + str(type(e)) + ": " + str(e),
-                file = error_stream)
+                file = self.error_stream)
             sys.exit()
         self.user = args.user
 
